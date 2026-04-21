@@ -3,36 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VOID LION | منصة الأسد</title>
+    <title>VOID LION</title>
     <meta name="theme-color" content="#00f2ff">
-    <link rel="manifest" href="manifest.json">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
     
+    <!-- مهم لـ GitHub Pages -->
+    <base href="./">
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    
+    <!-- الخطوط -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- الأنماط -->
+    <link rel="stylesheet" href="./css/style.css">
+    
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    
+    <!-- Cloudinary -->
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
 </head>
 <body class="bg-black text-white">
 
 <!-- شاشة التحميل -->
-<div id="loadingScreen" class="fixed inset-0 bg-black z-50 flex items-center justify-center">
-    <div class="text-center">
-        <i class="fas fa-lion text-7xl text-cyan-400 animate-pulse"></i>
-        <h1 class="text-4xl mt-4 text-cyan-400 font-bold">VOID LION</h1>
-        <div class="loading-spinner mt-6 mx-auto"></div>
+<div id="loadingScreen">
+    <div class="loading-content">
+        <i class="fas fa-lion"></i>
+        <h1>VOID LION</h1>
+        <div class="spinner"></div>
+        <p id="loadingStatus">جاري الاتصال بالنظام...</p>
     </div>
 </div>
 
-<div id="app" class="hidden">
+<!-- التطبيق الرئيسي -->
+<div id="app">
+
     <!-- شريط الحالة -->
-    <div class="app-header">
-        <div class="digital-clock" id="liveClock">00:00:00</div>
-        <div class="system-log" id="systemLog">⚡ جاهز</div>
+    <div class="status-bar">
+        <div class="clock" id="liveClock">00:00:00</div>
+        <div class="log" id="systemLog">⚡ جاهز</div>
         <button class="notif-btn" onclick="VoidApp.openPanel('notificationsPanel')">
             <i class="fas fa-bell"></i>
-            <span id="notifBadge" class="notif-badge hidden">0</span>
+            <span id="notifBadge" class="badge hidden">0</span>
         </button>
     </div>
 
@@ -54,7 +70,7 @@
                 <span id="shareCount">0</span>
             </button>
             <button class="action-btn" onclick="VoidReport.open()">
-                <i class="fas fa-flag" style="color: #ff0055;"></i>
+                <i class="fas fa-flag"></i>
                 <span>بلاغ</span>
             </button>
         </div>
@@ -66,23 +82,31 @@
 
     <!-- ==================== صفحة الاستكشاف ==================== -->
     <section id="page-explore" class="page">
-        <div class="search-bar">
-            <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="ابحث عن فيديوهات، مستخدمين...">
-            <button onclick="VoidExplore.voiceSearch()"><i class="fas fa-microphone"></i></button>
+        <div class="page-content">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="ابحث عن فيديوهات، مستخدمين...">
+                <button onclick="VoidExplore.voiceSearch()"><i class="fas fa-microphone"></i></button>
+            </div>
+            
+            <div class="trending-section">
+                <h3>🔥 الرائج الآن</h3>
+                <div id="trendingTags" class="hashtag-cloud"></div>
+            </div>
+            
+            <div id="exploreGrid" class="explore-grid"></div>
         </div>
-        
-        <div class="trending-hashtags">
-            <h3 class="text-cyan-400 text-lg">🔥 الرائج الآن</h3>
-            <div id="trendingTags" class="hashtag-cloud"></div>
-        </div>
-        
-        <div id="exploreGrid" class="explore-grid"></div>
     </section>
 
     <!-- ==================== صفحة الرسائل ==================== -->
     <section id="page-messages" class="page">
-        <div class="conversations-list" id="conversationsList"></div>
+        <div class="page-content">
+            <div class="messages-header">
+                <h2>💬 المحادثات</h2>
+                <button onclick="VoidChat.newChat()"><i class="fas fa-plus"></i></button>
+            </div>
+            <div id="conversationsList" class="conversations-list"></div>
+        </div>
     </section>
 
     <!-- ==================== صفحة الملف الشخصي ==================== -->
@@ -97,26 +121,26 @@
                 <button class="edit-avatar" onclick="VoidProfile.changeAvatar()"><i class="fas fa-camera"></i></button>
             </div>
             
-            <div class="profile-bio-card">
-                <div class="flex items-center gap-2">
-                    <h2 id="profileName" class="text-2xl font-bold"></h2>
-                    <span id="verifiedBadge" class="hidden"><i class="fas fa-check-circle text-cyan-400"></i></span>
+            <div class="profile-card">
+                <div class="profile-name-row">
+                    <h2 id="profileName"></h2>
+                    <span id="verifiedBadge" class="verified-badge hidden"><i class="fas fa-check-circle"></i></span>
                 </div>
-                <p id="profileBio" class="mt-2 text-gray-300"></p>
-                <a id="profileLink" href="#" target="_blank" class="flex items-center gap-2 mt-2 text-cyan-400">
+                <p id="profileBio"></p>
+                <a id="profileLink" href="#" target="_blank" class="profile-link">
                     <i class="fas fa-link"></i>
                     <span id="linkText"></span>
                 </a>
             </div>
             
             <div class="profile-stats">
-                <div class="stat-item"><span class="stat-value" id="profileFollowers">0</span><span class="stat-label">متابع</span></div>
-                <div class="stat-item"><span class="stat-value" id="profileFollowing">0</span><span class="stat-label">يتابع</span></div>
-                <div class="stat-item"><span class="stat-value" id="profileVideos">0</span><span class="stat-label">فيديو</span></div>
+                <div class="stat"><span id="profileFollowers">0</span> متابع</div>
+                <div class="stat"><span id="profileFollowing">0</span> يتابع</div>
+                <div class="stat"><span id="profileVideos">0</span> فيديو</div>
             </div>
             
-            <button class="neon-btn" onclick="VoidProfile.openEditModal()"><i class="fas fa-pen"></i> تعديل الملف</button>
-            <button class="neon-btn mt-2" style="background: #ff0055;" onclick="VoidAuth.logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+            <button class="btn-edit" onclick="VoidProfile.openEditModal()"><i class="fas fa-pen"></i> تعديل الملف</button>
+            <button class="btn-logout" onclick="VoidAuth.logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
             
             <div id="profileVideosGrid" class="profile-videos-grid"></div>
         </div>
@@ -137,9 +161,9 @@
             <button onclick="VoidApp.closePanel('commentsPanel')"><i class="fas fa-times"></i></button>
         </div>
         <div id="commentsList"></div>
-        <div class="flex gap-2 mt-4">
-            <input type="text" id="commentInput" placeholder="أكتب تعليقاً..." class="flex-1 bg-white/10 border border-cyan-400/30 rounded-xl p-3 text-white">
-            <button class="neon-btn w-auto px-6" onclick="VoidVideo.sendComment()"><i class="fas fa-paper-plane"></i></button>
+        <div class="comment-input">
+            <input type="text" id="commentInput" placeholder="أكتب تعليقاً...">
+            <button onclick="VoidVideo.sendComment()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
@@ -155,45 +179,40 @@
     <!-- نافذة رفع الفيديو -->
     <div id="uploadModal" class="modal hidden">
         <div class="modal-content">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-cyan-400 text-xl">🎬 رفع فيديو جديد</h3>
-                <button onclick="VoidUpload.closeModal()"><i class="fas fa-times text-2xl"></i></button>
+            <div class="modal-header">
+                <h3>🎬 رفع فيديو جديد</h3>
+                <button onclick="VoidUpload.closeModal()"><i class="fas fa-times"></i></button>
             </div>
             
             <div id="uploadArea" class="upload-area" onclick="VoidUpload.triggerWidget()">
                 <i class="fas fa-cloud-upload-alt"></i>
-                <p class="text-lg mt-3">اضغط لاختيار فيديو</p>
-                <p class="text-sm opacity-70 mt-1">MP4, MOV حتى 200MB</p>
+                <p>اضغط لاختيار فيديو</p>
+                <span>MP4, MOV حتى 200MB</span>
             </div>
             
-            <div id="uploadProgress" class="hidden">
-                <div class="flex justify-between text-sm mb-2">
-                    <span>جاري الرفع...</span>
-                    <span id="progressPercent">0%</span>
-                </div>
-                <div class="progress-bar">
-                    <div id="progressFill" class="progress-fill" style="width:0%"></div>
-                </div>
+            <div id="uploadProgress" class="upload-progress hidden">
+                <div class="progress-text"><span>جاري الرفع...</span><span id="progressPercent">0%</span></div>
+                <div class="progress-bar"><div id="progressFill" style="width:0%"></div></div>
             </div>
             
-            <div id="videoInfo" class="hidden">
-                <div class="flex gap-3 mb-4">
-                    <video id="videoPreview" class="w-24 h-32 object-cover rounded-lg" muted></video>
-                    <div class="flex-1">
-                        <input type="text" id="videoTitle" placeholder="عنوان الفيديو" class="w-full bg-white/10 border border-cyan-400/30 rounded-xl p-3 text-white mb-2">
-                        <textarea id="videoDescription" placeholder="وصف الفيديو... #هاشتاغ" class="w-full bg-white/10 border border-cyan-400/30 rounded-xl p-3 text-white h-20 resize-none"></textarea>
+            <div id="videoInfo" class="video-info hidden">
+                <div class="preview-row">
+                    <video id="videoPreview" muted></video>
+                    <div class="inputs">
+                        <input type="text" id="videoTitle" placeholder="عنوان الفيديو">
+                        <textarea id="videoDescription" placeholder="وصف الفيديو... #هاشتاغ"></textarea>
                     </div>
                 </div>
                 
-                <div class="mb-4">
-                    <label class="block text-sm text-cyan-400 mb-2">صورة مصغرة</label>
-                    <div class="flex items-center gap-3">
-                        <img id="thumbnailPreview" class="w-20 h-20 object-cover rounded-lg bg-gray-800">
-                        <button class="glass px-4 py-2 rounded-xl" onclick="VoidUpload.selectThumbnail()">اختر صورة</button>
+                <div class="thumbnail-section">
+                    <label>صورة مصغرة</label>
+                    <div class="thumbnail-row">
+                        <img id="thumbnailPreview">
+                        <button onclick="VoidUpload.selectThumbnail()">اختر صورة</button>
                     </div>
                 </div>
                 
-                <button id="publishBtn" class="neon-btn" onclick="VoidUpload.publish()">نشر الفيديو 🚀</button>
+                <button id="publishBtn" class="btn-publish" onclick="VoidUpload.publish()">نشر الفيديو 🚀</button>
             </div>
         </div>
     </div>
@@ -201,13 +220,13 @@
     <!-- نافذة تعديل الملف -->
     <div id="editProfileModal" class="modal hidden">
         <div class="modal-content">
-            <h3 class="text-cyan-400 text-xl mb-4">✏️ تعديل الملف</h3>
-            <input type="text" id="editName" placeholder="الاسم" class="w-full bg-white/10 border border-cyan-400/30 rounded-xl p-3 text-white mb-3">
-            <textarea id="editBio" placeholder="السيرة الذاتية" class="w-full bg-white/10 border border-cyan-400/30 rounded-xl p-3 text-white h-24 resize-none mb-3"></textarea>
-            <input type="url" id="editWebsite" placeholder="الموقع الإلكتروني" class="w-full bg-white/10 border border-cyan-400/30 rounded-xl p-3 text-white mb-4">
-            <div class="flex gap-2">
-                <button class="neon-btn" onclick="VoidProfile.saveEdit()">حفظ</button>
-                <button class="glass px-6 py-3 rounded-xl" onclick="VoidApp.closeModal('editProfileModal')">إلغاء</button>
+            <h3>✏️ تعديل الملف</h3>
+            <input type="text" id="editName" placeholder="الاسم">
+            <textarea id="editBio" placeholder="السيرة الذاتية"></textarea>
+            <input type="url" id="editWebsite" placeholder="الموقع الإلكتروني">
+            <div class="modal-buttons">
+                <button class="btn-save" onclick="VoidProfile.saveEdit()">حفظ</button>
+                <button class="btn-cancel" onclick="VoidApp.closeModal('editProfileModal')">إلغاء</button>
             </div>
         </div>
     </div>
@@ -216,19 +235,19 @@
     <div id="chatWindow" class="chat-window hidden">
         <div class="chat-header">
             <button onclick="VoidChat.closeChat()"><i class="fas fa-arrow-right"></i></button>
-            <img id="chatAvatar" src="" class="w-10 h-10 rounded-full">
-            <div class="flex-1">
+            <img id="chatAvatar" src="">
+            <div>
                 <h4 id="chatUsername"></h4>
-                <span id="chatStatus" class="text-xs text-cyan-400"><span class="online-indicator"></span> متصل الآن</span>
+                <span id="chatStatus"><span class="online-dot"></span> متصل الآن</span>
             </div>
             <button onclick="VoidChat.blockUser()"><i class="fas fa-ellipsis-v"></i></button>
         </div>
         
         <div id="chatMessages" class="chat-messages"></div>
         
-        <div class="chat-input-area">
+        <div class="chat-input">
             <button onclick="VoidChat.attachImage()"><i class="fas fa-image"></i></button>
-            <button onclick="VoidChat.toggleRecording()" id="recordBtn"><i class="fas fa-microphone"></i></button>
+            <button onclick="VoidChat.toggleRecording()"><i class="fas fa-microphone"></i></button>
             <input type="text" id="messageInput" placeholder="اكتب رسالة...">
             <button onclick="VoidChat.sendMessage()"><i class="fas fa-paper-plane"></i></button>
         </div>
@@ -245,36 +264,41 @@
 
     <!-- لوحة الأدمن -->
     <div id="adminPanel" class="admin-panel hidden">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-yellow-400 text-2xl">👑 لوحة التحكم</h2>
-            <button onclick="VoidApp.closeModal('adminPanel')"><i class="fas fa-times text-2xl"></i></button>
+        <div class="admin-header">
+            <h2>👑 لوحة التحكم</h2>
+            <button onclick="VoidApp.closeModal('adminPanel')"><i class="fas fa-times"></i></button>
         </div>
         
         <div class="admin-stats">
-            <div class="admin-stat"><span class="value" id="adminUsers">0</span><span class="label">مستخدم</span></div>
-            <div class="admin-stat"><span class="value" id="adminVideos">0</span><span class="label">فيديو</span></div>
-            <div class="admin-stat"><span class="value" id="adminReports">0</span><span class="label">بلاغ</span></div>
+            <div class="stat-card"><span id="adminUsers">0</span> مستخدم</div>
+            <div class="stat-card"><span id="adminVideos">0</span> فيديو</div>
+            <div class="stat-card"><span id="adminReports">0</span> بلاغ</div>
         </div>
         
         <div class="admin-tabs">
-            <button class="admin-tab active" data-admin-tab="users">المستخدمين</button>
-            <button class="admin-tab" data-admin-tab="reports">البلاغات</button>
+            <button class="tab active" data-tab="users">المستخدمين</button>
+            <button class="tab" data-tab="reports">البلاغات</button>
         </div>
         
         <div id="adminUsersList"></div>
         <div id="adminReportsList" class="hidden"></div>
         
-        <button class="neon-btn mt-6" style="background: #ff0055;" onclick="VoidAuth.logout()">تسجيل الخروج</button>
+        <button class="btn-logout" onclick="VoidAuth.logout()">تسجيل الخروج</button>
     </div>
 </div>
 
+<!-- Service Worker -->
 <script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
-    }
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(reg => console.log('✅ SW', reg.scope))
+        .catch(err => console.log('❌ SW', err));
+}
 </script>
-<script src="js/firebase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/app.js"></script>
+
+<!-- الملفات -->
+<script src="./js/firebase.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/app.js"></script>
 </body>
 </html>
