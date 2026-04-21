@@ -10,141 +10,67 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-    <style>
-        .auth-container {
-            min-height: 100vh; display: flex; align-items: center; justify-content: center;
-            padding: 20px; background: radial-gradient(circle at 30% 50%, rgba(0,242,255,0.1), transparent);
-        }
-        .auth-card {
-            max-width: 420px; width: 100%; background: rgba(10,20,30,0.9);
-            backdrop-filter: blur(20px); border: 1px solid #00f2ff;
-            border-radius: 30px; padding: 40px 30px;
-        }
-        .auth-logo { text-align: center; margin-bottom: 30px; }
-        .auth-logo i { font-size: 50px; color: #00f2ff; }
-        .auth-logo h1 { font-size: 28px; color: #00f2ff; margin-top: 10px; }
-        .auth-tabs { display: flex; gap: 10px; margin-bottom: 25px; }
-        .tab-btn {
-            flex: 1; padding: 12px; background: transparent; border: none;
-            color: rgba(255,255,255,0.5); font-size: 16px; cursor: pointer;
-            border-bottom: 2px solid transparent;
-        }
-        .tab-btn.active { color: #00f2ff; border-bottom-color: #00f2ff; }
-        .auth-form.hidden { display: none; }
-        .input-group {
-            position: relative; margin-bottom: 16px;
-        }
-        .input-group i {
-            position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-            color: #00f2ff;
-        }
-        .input-group input {
-            width: 100%; padding: 14px 45px 14px 16px;
-            background: rgba(0,0,0,0.5); border: 1px solid rgba(0,242,255,0.2);
-            border-radius: 15px; color: #fff; outline: none;
-        }
-        .input-group input:focus { border-color: #00f2ff; }
-        .btn-submit {
-            width: 100%; padding: 14px;
-            background: linear-gradient(135deg, #00f2ff, #0066ff);
-            border: none; border-radius: 50px; color: #000;
-            font-weight: bold; font-size: 16px; cursor: pointer;
-        }
-        .message {
-            margin-top: 16px; padding: 10px; border-radius: 10px;
-            text-align: center; font-size: 14px;
-        }
-        .message.error { background: rgba(255,0,85,0.1); color: #ff0055; }
-        .message.success { background: rgba(0,255,136,0.1); color: #00ff88; }
-    </style>
 </head>
-<body class="bg-black text-white">
-
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-logo">
-            <i class="fas fa-lion"></i>
-            <h1>VOID LION</h1>
-            <p style="color:#00f2ff;opacity:0.7;font-size:12px">بوابة الفراغ الرقمي</p>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <i class="fas fa-lion"></i>
+                <h1>VOID LION</h1>
+                <p>بوابة الفراغ الرقمي</p>
+            </div>
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="login">دخول</button>
+                <button class="tab-btn" data-tab="register">حساب جديد</button>
+            </div>
+            <form id="loginForm" class="auth-form">
+                <div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required></div>
+                <div class="input-group"><i class="fas fa-lock"></i><input type="password" id="loginPassword" placeholder="كلمة المرور" required></div>
+                <button type="submit" class="btn-submit">دخول <i class="fas fa-arrow-left"></i></button>
+            </form>
+            <form id="registerForm" class="auth-form" style="display:none">
+                <div class="input-group"><i class="fas fa-user"></i><input type="text" id="regUsername" placeholder="اسم المستخدم" required></div>
+                <div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="regEmail" placeholder="البريد الإلكتروني" required></div>
+                <div class="input-group"><i class="fas fa-lock"></i><input type="password" id="regPassword" placeholder="كلمة المرور" required></div>
+                <button type="submit" class="btn-submit">إنشاء حساب <i class="fas fa-user-plus"></i></button>
+            </form>
+            <div id="message" class="message"></div>
         </div>
-
-        <div class="auth-tabs">
-            <button class="tab-btn active" data-tab="login">دخول</button>
-            <button class="tab-btn" data-tab="register">حساب جديد</button>
-        </div>
-
-        <form id="loginForm" class="auth-form">
-            <div class="input-group">
-                <i class="fas fa-envelope"></i>
-                <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required>
-            </div>
-            <div class="input-group">
-                <i class="fas fa-lock"></i>
-                <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
-            </div>
-            <button type="submit" class="btn-submit">دخول <i class="fas fa-arrow-left"></i></button>
-        </form>
-
-        <form id="registerForm" class="auth-form hidden">
-            <div class="input-group">
-                <i class="fas fa-user"></i>
-                <input type="text" id="regUsername" placeholder="اسم المستخدم" required>
-            </div>
-            <div class="input-group">
-                <i class="fas fa-envelope"></i>
-                <input type="email" id="regEmail" placeholder="البريد الإلكتروني" required>
-            </div>
-            <div class="input-group">
-                <i class="fas fa-lock"></i>
-                <input type="password" id="regPassword" placeholder="كلمة المرور" required>
-            </div>
-            <button type="submit" class="btn-submit">إنشاء حساب <i class="fas fa-user-plus"></i></button>
-        </form>
-
-        <div id="message" class="message"></div>
     </div>
-</div>
-
-<script src="./js/firebase.js"></script>
-<script src="./js/auth.js"></script>
-<script>
-    const loginTab = document.querySelector('[data-tab="login"]');
-    const registerTab = document.querySelector('[data-tab="register"]');
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    const msg = document.getElementById('message');
-
-    loginTab.onclick = () => {
-        loginTab.classList.add('active'); registerTab.classList.remove('active');
-        loginForm.classList.remove('hidden'); registerForm.classList.add('hidden');
-    };
-    registerTab.onclick = () => {
-        registerTab.classList.add('active'); loginTab.classList.remove('active');
-        registerForm.classList.remove('hidden'); loginForm.classList.add('hidden');
-    };
-
-    loginForm.onsubmit = async (e) => {
-        e.preventDefault();
-        msg.textContent = 'جاري الدخول...'; msg.className = 'message';
-        const r = await VoidAuth.login(loginEmail.value, loginPassword.value);
-        msg.textContent = r.success ? 'تم الدخول!' : r.error;
-        msg.className = 'message ' + (r.success ? 'success' : 'error');
-        if (r.success) setTimeout(() => location.href = 'index.html', 500);
-    };
-
-    registerForm.onsubmit = async (e) => {
-        e.preventDefault();
-        if (regUsername.value.length < 3) {
-            msg.textContent = 'اسم المستخدم 3 أحرف على الأقل';
-            msg.className = 'message error';
-            return;
-        }
-        msg.textContent = 'جاري إنشاء الحساب...'; msg.className = 'message';
-        const r = await VoidAuth.register(regUsername.value, regEmail.value, regPassword.value);
-        msg.textContent = r.success ? 'تم إنشاء الحساب!' : r.error;
-        msg.className = 'message ' + (r.success ? 'success' : 'error');
-        if (r.success) setTimeout(() => location.href = 'index.html', 500);
-    };
-</script>
+    <script src="./js/firebase.js"></script>
+    <script src="./js/auth.js"></script>
+    <script>
+        const loginTab = document.querySelector('[data-tab="login"]');
+        const registerTab = document.querySelector('[data-tab="register"]');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const msg = document.getElementById('message');
+        
+        loginTab.onclick = () => {
+            loginTab.classList.add('active'); registerTab.classList.remove('active');
+            loginForm.style.display = 'block'; registerForm.style.display = 'none';
+        };
+        registerTab.onclick = () => {
+            registerTab.classList.add('active'); loginTab.classList.remove('active');
+            registerForm.style.display = 'block'; loginForm.style.display = 'none';
+        };
+        loginForm.onsubmit = async (e) => {
+            e.preventDefault();
+            msg.textContent = 'جاري الدخول...'; msg.className = 'message';
+            const r = await VoidAuth.login(loginEmail.value, loginPassword.value);
+            msg.textContent = r.success ? 'تم الدخول!' : r.error;
+            msg.className = 'message ' + (r.success ? 'success' : 'error');
+            if (r.success) setTimeout(() => location.href = 'index.html', 500);
+        };
+        registerForm.onsubmit = async (e) => {
+            e.preventDefault();
+            if (regUsername.value.length < 3) { msg.textContent = 'اسم المستخدم 3 أحرف على الأقل'; msg.className = 'message error'; return; }
+            msg.textContent = 'جاري إنشاء الحساب...'; msg.className = 'message';
+            const r = await VoidAuth.register(regUsername.value, regEmail.value, regPassword.value);
+            msg.textContent = r.success ? 'تم إنشاء الحساب!' : r.error;
+            msg.className = 'message ' + (r.success ? 'success' : 'error');
+            if (r.success) setTimeout(() => location.href = 'index.html', 500);
+        };
+    </script>
 </body>
 </html>
