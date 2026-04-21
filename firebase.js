@@ -1,4 +1,4 @@
-// ==================== VOID_LION - FIREBASE CONFIG ====================
+// VOID LION - Firebase Config
 const firebaseConfig = {
     apiKey: "AIzaSyBn7HuSVO5m1yNKnZzXfeIHuI5S0hsQPmQ",
     authDomain: "vexe-f6558.firebaseapp.com",
@@ -20,4 +20,5 @@ const CLOUDINARY_CONFIG = {
 
 const ADMIN_EMAIL = "jasim28v@gmail.com";
 
-console.log('🔥 VOID_LION - FIREBASE ACTIVE');
+document.getElementById('loadingStatus').textContent = '✅ Firebase جاهز';
+console.log('🔥 VOID LION - Firebase Active');
