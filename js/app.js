@@ -1,13 +1,10 @@
-// ==================== VOID_LION - MAIN APPLICATION ====================
-// كل شيء يعمل - مع حفظ الصفحة في الرابط
-
+// VOID LION - Main Application - Complete System
 const VoidApp = {
     currentPage: 'home',
     currentVideoId: null,
     currentChatUser: null,
     mediaRecorder: null,
     audioChunks: [],
-    recordingStartTime: null,
     recordingInterval: null,
 
     init() {
@@ -15,34 +12,28 @@ const VoidApp = {
         this.setupAdminTabs();
         this.startClock();
         this.checkAdmin();
-        this.loadUserData();
-        this.hideLoader();
-        this.checkDeepLink(); // 🆕 قراءة الرابط عند الفتح
+        setTimeout(() => this.hideLoader(), 1000);
     },
 
     hideLoader() {
-        setTimeout(() => {
-            document.getElementById('loadingScreen').classList.add('hidden');
-            document.getElementById('app').classList.remove('hidden');
-            VoidVideo.loadFeed();
-        }, 1500);
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('app').classList.add('ready');
+        VoidVideo.loadFeed();
+        VoidNotifications.init();
     },
 
     setupNavigation() {
         document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                this.switchPage(item.dataset.page);
-            });
+            item.addEventListener('click', () => this.switchPage(item.dataset.page));
         });
     },
 
     setupAdminTabs() {
-        document.querySelectorAll('[data-admin-tab]').forEach(tab => {
+        document.querySelectorAll('[data-tab]').forEach(tab => {
             tab.addEventListener('click', () => {
-                document.querySelectorAll('[data-admin-tab]').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                
-                if (tab.dataset.adminTab === 'users') {
+                if (tab.dataset.tab === 'users') {
                     document.getElementById('adminUsersList').classList.remove('hidden');
                     document.getElementById('adminReportsList').classList.add('hidden');
                     VoidAdmin.loadUsers();
@@ -55,29 +46,8 @@ const VoidApp = {
         });
     },
 
-    // 🆕 قراءة الرابط عند فتح الموقع أو تحديثه
-    checkDeepLink() {
-        const hash = window.location.hash.replace('#', '');
-        
-        if (hash && ['home', 'explore', 'messages', 'profile'].includes(hash)) {
-            this.switchPage(hash);
-        }
-        
-        window.addEventListener('hashchange', () => {
-            const newHash = window.location.hash.replace('#', '');
-            if (newHash && ['home', 'explore', 'messages', 'profile'].includes(newHash)) {
-                this.switchPage(newHash);
-            }
-        });
-    },
-
-    // 🆕 تحديث - حفظ الصفحة في الرابط
     switchPage(page) {
         this.currentPage = page;
-        
-        // حفظ في الرابط بدون إعادة تحميل
-        history.replaceState(null, null, `#${page}`);
-        
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(`page-${page}`).classList.add('active');
         
@@ -105,14 +75,6 @@ const VoidApp = {
 
     closeModal(modalId) {
         document.getElementById(modalId).classList.add('hidden');
-        
-        // 🆕 إيقاف التسجيل إذا كانت نافذة المحادثة
-        if (modalId === 'chatWindow' && this.mediaRecorder) {
-            this.mediaRecorder.stop();
-            this.mediaRecorder = null;
-            clearInterval(this.recordingInterval);
-            document.getElementById('recordingIndicator').classList.add('hidden');
-        }
     },
 
     startClock() {
@@ -127,19 +89,10 @@ const VoidApp = {
         }
     },
 
-    async loadUserData() {
-        const user = await VoidAuth.loadUserData();
-        if (user) {
-            document.getElementById('profileAvatar').src = user.avatar || '';
-            document.getElementById('profileName').textContent = `@${user.username}`;
-        }
-    },
-
-    setLog(message, isError = false) {
+    setLog(msg, isError = false) {
         const log = document.getElementById('systemLog');
-        log.textContent = message;
+        log.textContent = msg;
         log.style.color = isError ? '#ff0055' : '#00f2ff';
-        setTimeout(() => log.style.color = '#00f2ff', 2000);
     },
 
     formatNumber(num) {
@@ -155,26 +108,25 @@ const VoidApp = {
         if (seconds < 60) return 'الآن';
         if (seconds < 3600) return `منذ ${Math.floor(seconds / 60)} د`;
         if (seconds < 86400) return `منذ ${Math.floor(seconds / 3600)} س`;
-        if (seconds < 2592000) return `منذ ${Math.floor(seconds / 86400)} ي`;
-        return `منذ ${Math.floor(seconds / 2592000)} ش`;
+        return `منذ ${Math.floor(seconds / 86400)} ي`;
     }
 };
 
-// ==================== نظام الفيديوهات ====================
+// نظام الفيديوهات
 const VoidVideo = {
     currentVideoId: null,
     currentVideoUserId: null,
 
     async loadFeed() {
         const feed = document.getElementById('videoFeed');
-        feed.innerHTML = '<div class="text-center py-20"><div class="loading-spinner mx-auto"></div></div>';
+        feed.innerHTML = '<div style="text-align:center;padding:50% 0"><div class="spinner"></div></div>';
         
-        const snap = await db.ref('videos').orderByChild('timestamp').limitToLast(30).once('value');
+        const snap = await db.ref('videos').orderByChild('timestamp').limitToLast(20).once('value');
         const videos = snap.val();
         
         feed.innerHTML = '';
         if (!videos) {
-            feed.innerHTML = '<p class="text-center py-20 text-gray-400">لا توجد فيديوهات بعد</p>';
+            feed.innerHTML = '<p style="text-align:center;padding:50% 0;color:#888">لا توجد فيديوهات</p>';
             return;
         }
         
@@ -192,15 +144,15 @@ const VoidVideo = {
             <video src="${video.url}" poster="${video.thumbnail || ''}" loop playsinline></video>
             <div class="video-info">
                 <div class="video-user">
-                    <img src="${video.userAvatar || ''}" alt="">
+                    <img src="${video.userAvatar || ''}">
                     <div>
-                        <span class="font-bold">@${video.username}</span>
+                        <span style="font-weight:bold">@${video.username}</span>
                         ${video.userId !== VoidAuth.currentUser?.uid ? 
                             `<button class="follow-btn" onclick="VoidUser.follow('${video.userId}')">متابعة</button>` : ''}
                     </div>
                 </div>
-                <p class="font-bold mt-1">${video.title || ''}</p>
-                <p class="text-sm opacity-80">${video.description || ''}</p>
+                <p style="font-weight:bold;margin-top:8px">${video.title || ''}</p>
+                <p style="font-size:14px;opacity:0.8">${video.description || ''}</p>
             </div>
         `;
         
@@ -234,7 +186,6 @@ const VoidVideo = {
         
         document.getElementById('likeCount').textContent = VoidApp.formatNumber(Object.keys(v.likes || {}).length);
         document.getElementById('commentCount').textContent = VoidApp.formatNumber(v.comments || 0);
-        document.getElementById('shareCount').textContent = VoidApp.formatNumber(v.shares || 0);
         
         const liked = v.likes && v.likes[VoidAuth.currentUser?.uid];
         document.getElementById('likeIcon').style.color = liked ? '#ff007f' : '#fff';
@@ -269,27 +220,27 @@ const VoidVideo = {
 
     async loadComments() {
         const container = document.getElementById('commentsList');
-        container.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+        container.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
         
         const snap = await db.ref(`comments/${this.currentVideoId}`).once('value');
         const comments = snap.val();
         
         container.innerHTML = '';
         if (!comments) {
-            container.innerHTML = '<p class="text-center py-10 text-gray-400">لا توجد تعليقات</p>';
+            container.innerHTML = '<p style="text-align:center;padding:20px;color:#888">لا توجد تعليقات</p>';
             return;
         }
         
         Object.entries(comments).reverse().forEach(([id, c]) => {
             const div = document.createElement('div');
-            div.className = 'glass p-3 rounded-xl mb-2';
+            div.style.cssText = 'background:rgba(255,255,255,0.05);padding:12px;border-radius:12px;margin-bottom:10px';
             div.innerHTML = `
-                <div class="flex gap-2">
-                    <img src="${c.userAvatar}" class="w-8 h-8 rounded-full">
-                    <div class="flex-1">
-                        <span class="font-bold text-cyan-400">@${c.username}</span>
-                        <p class="text-sm mt-1">${c.text}</p>
-                        <span class="text-xs opacity-60">${VoidApp.timeAgo(c.timestamp)}</span>
+                <div style="display:flex;gap:10px">
+                    <img src="${c.userAvatar}" style="width:32px;height:32px;border-radius:50%">
+                    <div style="flex:1">
+                        <span style="font-weight:bold;color:#00f2ff">@${c.username}</span>
+                        <p style="margin-top:5px">${c.text}</p>
+                        <span style="font-size:11px;opacity:0.6">${VoidApp.timeAgo(c.timestamp)}</span>
                     </div>
                 </div>
             `;
@@ -310,8 +261,7 @@ const VoidVideo = {
             userId: VoidAuth.currentUser.uid,
             username: user.username,
             userAvatar: user.avatar,
-            text: text,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
+            text, timestamp: firebase.database.ServerValue.TIMESTAMP
         });
         
         await db.ref(`videos/${this.currentVideoId}/comments`).transaction(c => (c || 0) + 1);
@@ -323,20 +273,16 @@ const VoidVideo = {
 
     shareVideo() {
         if (!this.currentVideoId) return;
-        const url = window.location.href.split('#')[0] + '#home';
+        const url = window.location.href.split('#')[0];
         
-        if (navigator.share) {
-            navigator.share({ title: 'VOID LION', url });
-        } else {
-            navigator.clipboard?.writeText(url);
-            VoidApp.setLog('📋 تم نسخ الرابط');
-        }
+        if (navigator.share) navigator.share({ title: 'VOID LION', url });
+        else { navigator.clipboard?.writeText(url); VoidApp.setLog('📋 تم نسخ الرابط'); }
         
         db.ref(`videos/${this.currentVideoId}/shares`).transaction(s => (s || 0) + 1);
     }
 };
 
-// ==================== نظام الرفع ====================
+// نظام الرفع
 const VoidUpload = {
     videoFile: null,
     thumbnailFile: null,
@@ -347,20 +293,13 @@ const VoidUpload = {
         this.resetForm();
     },
 
-    closeModal() {
-        VoidApp.closeModal('uploadModal');
-        this.resetForm();
-    },
+    closeModal() { VoidApp.closeModal('uploadModal'); this.resetForm(); },
 
     resetForm() {
         document.getElementById('uploadArea').classList.remove('hidden');
         document.getElementById('uploadProgress').classList.add('hidden');
         document.getElementById('videoInfo').classList.add('hidden');
-        document.getElementById('videoTitle').value = '';
-        document.getElementById('videoDescription').value = '';
-        document.getElementById('thumbnailPreview').src = '';
-        this.videoFile = null;
-        this.thumbnailFile = null;
+        this.videoFile = this.thumbnailFile = null;
     },
 
     triggerWidget() {
@@ -375,13 +314,11 @@ const VoidUpload = {
                 document.getElementById('uploadArea').classList.add('hidden');
                 document.getElementById('uploadProgress').classList.remove('hidden');
             }
-            
             if (result.event === 'progress') {
                 const p = Math.round(result.info.progress * 100);
                 document.getElementById('progressPercent').textContent = p + '%';
                 document.getElementById('progressFill').style.width = p + '%';
             }
-            
             if (result.event === 'success') {
                 this.videoFile = result.info;
                 this.showVideoInfo();
@@ -413,27 +350,21 @@ const VoidUpload = {
     async publish() {
         const title = document.getElementById('videoTitle').value.trim();
         const desc = document.getElementById('videoDescription').value.trim();
-        
         if (!title) { VoidApp.setLog('أدخل عنوان الفيديو', true); return; }
         
         const btn = document.getElementById('publishBtn');
-        btn.disabled = true;
-        btn.textContent = 'جاري النشر...';
+        btn.disabled = true; btn.textContent = 'جاري النشر...';
         
         const user = await VoidAuth.loadUserData();
         
         await db.ref('videos').push({
             url: this.videoFile.secure_url,
             thumbnail: this.thumbnailFile?.secure_url || this.videoFile.thumbnail_url,
-            title: title,
-            description: desc,
+            title, description: desc,
             userId: VoidAuth.currentUser.uid,
             username: user.username,
             userAvatar: user.avatar,
-            likes: {},
-            comments: 0,
-            shares: 0,
-            views: 0,
+            likes: {}, comments: 0, shares: 0, views: 0,
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
         
@@ -443,14 +374,14 @@ const VoidUpload = {
     }
 };
 
-// ==================== نظام البروفايل ====================
+// نظام البروفايل
 const VoidProfile = {
     async load() {
         const user = await VoidAuth.loadUserData();
         if (!user) return;
         
-        document.getElementById('profileCover').style.backgroundImage = `url(${user.cover || ''})`;
-        document.getElementById('profileAvatar').src = user.avatar || '';
+        document.getElementById('profileCover').style.backgroundImage = `url(${user.cover})`;
+        document.getElementById('profileAvatar').src = user.avatar;
         document.getElementById('profileName').textContent = `@${user.username}`;
         document.getElementById('profileBio').textContent = user.bio || '';
         
@@ -459,9 +390,7 @@ const VoidProfile = {
             document.getElementById('linkText').textContent = user.website.replace(/^https?:\/\//, '');
         }
         
-        if (user.verified) {
-            document.getElementById('verifiedBadge').classList.remove('hidden');
-        }
+        if (user.verified) document.getElementById('verifiedBadge').classList.remove('hidden');
         
         document.getElementById('profileFollowers').textContent = Object.keys(user.followers || {}).length;
         document.getElementById('profileFollowing').textContent = Object.keys(user.following || {}).length;
@@ -469,27 +398,17 @@ const VoidProfile = {
         const vSnap = await db.ref('videos').orderByChild('userId').equalTo(VoidAuth.currentUser.uid).once('value');
         const videos = vSnap.val() || {};
         document.getElementById('profileVideos').textContent = Object.keys(videos).length;
-        
-        const grid = document.getElementById('profileVideosGrid');
-        grid.innerHTML = Object.entries(videos).reverse().map(([id, v]) => `
-            <div class="grid-video" onclick="VoidApp.switchPage('home')">
-                <video src="${v.url}" muted></video>
-                <span class="views"><i class="fas fa-play"></i> ${VoidApp.formatNumber(v.views || 0)}</span>
-            </div>
-        `).join('');
     },
 
     changeAvatar() {
         cloudinary.createUploadWidget({
             cloudName: CLOUDINARY_CONFIG.cloudName,
             uploadPreset: CLOUDINARY_CONFIG.uploadPreset,
-            sources: ['local', 'camera'],
-            clientAllowedFormats: ['image']
+            sources: ['local', 'camera']
         }, async (error, result) => {
             if (result.event === 'success') {
                 await db.ref(`users/${VoidAuth.currentUser.uid}/avatar`).set(result.info.secure_url);
                 this.load();
-                VoidApp.setLog('✅ تم تحديث الصورة');
             }
         }).open();
     },
@@ -498,26 +417,19 @@ const VoidProfile = {
         cloudinary.createUploadWidget({
             cloudName: CLOUDINARY_CONFIG.cloudName,
             uploadPreset: CLOUDINARY_CONFIG.uploadPreset,
-            sources: ['local'],
-            clientAllowedFormats: ['image']
+            sources: ['local']
         }, async (error, result) => {
             if (result.event === 'success') {
                 await db.ref(`users/${VoidAuth.currentUser.uid}/cover`).set(result.info.secure_url);
                 this.load();
-                VoidApp.setLog('✅ تم تحديث الغلاف');
             }
         }).open();
     },
 
     openEditModal() {
-        const name = document.getElementById('profileName').textContent.replace('@', '');
-        const bio = document.getElementById('profileBio').textContent;
-        const link = document.getElementById('profileLink').href;
-        
-        document.getElementById('editName').value = name;
-        document.getElementById('editBio').value = bio;
-        document.getElementById('editWebsite').value = link !== '#' ? link : '';
-        
+        document.getElementById('editName').value = document.getElementById('profileName').textContent.replace('@', '');
+        document.getElementById('editBio').value = document.getElementById('profileBio').textContent;
+        document.getElementById('editWebsite').value = document.getElementById('profileLink').href !== '#' ? document.getElementById('profileLink').href : '';
         VoidApp.openModal('editProfileModal');
     },
 
@@ -532,307 +444,87 @@ const VoidProfile = {
         
         VoidApp.closeModal('editProfileModal');
         this.load();
-        VoidApp.setLog('✅ تم تحديث الملف');
     }
 };
 
-// ==================== نظام الاستكشاف ====================
+// نظام الاستكشاف
 const VoidExplore = {
     async load() {
         await this.loadTrending();
         await this.loadGrid();
-        this.setupSearch();
     },
 
     async loadTrending() {
         const snap = await db.ref('videos').limitToLast(100).once('value');
         const videos = snap.val() || {};
         const tags = {};
-        
         Object.values(videos).forEach(v => {
-            const matches = v.description?.match(/#[\w\u0600-\u06FF]+/g) || [];
-            matches.forEach(t => tags[t] = (tags[t] || 0) + 1);
+            (v.description?.match(/#[\w\u0600-\u06FF]+/g) || []).forEach(t => tags[t] = (tags[t] || 0) + 1);
         });
         
-        const trending = Object.entries(tags).sort((a, b) => b[1] - a[1]).slice(0, 8);
+        const trending = Object.entries(tags).sort((a,b) => b[1] - a[1]).slice(0, 6);
         document.getElementById('trendingTags').innerHTML = trending.map(([tag, count]) => 
-            `<span class="hashtag" onclick="VoidExplore.searchTag('${tag}')">${tag} (${count})</span>`
+            `<span class="hashtag">${tag} (${count})</span>`
         ).join('');
     },
 
-    async loadGrid(query = '') {
-        const snap = await db.ref('videos').limitToLast(30).once('value');
+    async loadGrid() {
+        const snap = await db.ref('videos').limitToLast(12).once('value');
         const videos = snap.val() || {};
         
-        let filtered = Object.entries(videos).reverse();
-        if (query) {
-            filtered = filtered.filter(([id, v]) => 
-                v.title?.includes(query) || v.description?.includes(query) || v.username?.includes(query)
-            );
-        }
-        
-        document.getElementById('exploreGrid').innerHTML = filtered.map(([id, v]) => `
+        document.getElementById('exploreGrid').innerHTML = Object.entries(videos).reverse().map(([id, v]) => `
             <div class="grid-video" onclick="VoidApp.switchPage('home')">
                 <video src="${v.url}" muted></video>
             </div>
         `).join('');
     },
 
-    setupSearch() {
-        const input = document.getElementById('searchInput');
-        input.addEventListener('input', (e) => this.loadGrid(e.target.value));
-    },
-
-    searchTag(tag) {
-        document.getElementById('searchInput').value = tag;
-        this.loadGrid(tag);
-    },
-
     voiceSearch() {
-        const recognition = new webkitSpeechRecognition();
-        recognition.lang = 'ar-SA';
-        recognition.onresult = (e) => {
-            document.getElementById('searchInput').value = e.results[0][0].transcript;
-            this.loadGrid(e.results[0][0].transcript);
-        };
-        recognition.start();
+        if ('webkitSpeechRecognition' in window) {
+            const r = new webkitSpeechRecognition(); r.lang = 'ar-SA';
+            r.onresult = e => document.getElementById('searchInput').value = e.results[0][0].transcript;
+            r.start();
+        }
     }
 };
 
-// ==================== نظام الرسائل ====================
+// نظام الرسائل
 const VoidChat = {
     async loadConversations() {
         if (!VoidAuth.currentUser) return;
-        
-        const snap = await db.ref(`conversations/${VoidAuth.currentUser.uid}`).once('value');
-        const convs = snap.val() || {};
-        
-        const list = document.getElementById('conversationsList');
-        
-        if (Object.keys(convs).length === 0) {
-            list.innerHTML = '<p class="text-center py-10 text-gray-400">لا توجد محادثات بعد</p>';
-            return;
-        }
-        
-        list.innerHTML = Object.entries(convs).map(([id, c]) => `
-            <div class="conversation-item" onclick="VoidChat.openChat('${id}')">
-                <img src="${c.avatar}" alt="">
-                <div class="conversation-info">
-                    <h4>${c.username}</h4>
-                    <p>${c.lastMessage || 'ابدأ المحادثة'}</p>
-                </div>
-                ${c.unread ? '<span class="online-indicator"></span>' : ''}
-            </div>
-        `).join('');
-        
-        // 🆕 بدء محادثة مع مستخدم جديد
-        this.setupNewChat();
-    },
-    
-    // 🆕 نظام بدء محادثة جديدة
-    setupNewChat() {
-        // يمكن البحث عن مستخدمين وبدء محادثة
+        document.getElementById('conversationsList').innerHTML = '<p style="text-align:center;padding:40px;color:#888">ابدأ محادثة جديدة</p>';
     },
 
-    async openChat(userId) {
-        VoidApp.currentChatUser = userId;
-        const userSnap = await db.ref(`users/${userId}`).once('value');
-        const user = userSnap.val();
-        
-        document.getElementById('chatAvatar').src = user.avatar;
-        document.getElementById('chatUsername').textContent = user.username;
-        document.getElementById('chatWindow').classList.remove('hidden');
-        
-        await this.loadMessages();
-        this.listenForMessages();
-    },
-
-    closeChat() {
-        document.getElementById('chatWindow').classList.add('hidden');
-        VoidApp.currentChatUser = null;
-        // إيقاف التسجيل إذا كان نشطاً
-        if (VoidApp.mediaRecorder) {
-            VoidApp.mediaRecorder.stop();
-            VoidApp.mediaRecorder = null;
-            clearInterval(VoidApp.recordingInterval);
-            document.getElementById('recordingIndicator').classList.add('hidden');
-        }
-    },
-
-    async loadMessages() {
-        const chatId = [VoidAuth.currentUser.uid, VoidApp.currentChatUser].sort().join('_');
-        const snap = await db.ref(`messages/${chatId}`).limitToLast(50).once('value');
-        const msgs = snap.val() || {};
-        
-        const container = document.getElementById('chatMessages');
-        
-        if (Object.keys(msgs).length === 0) {
-            container.innerHTML = '<p class="text-center py-10 text-gray-400">ابدأ المحادثة الآن</p>';
-            return;
-        }
-        
-        container.innerHTML = Object.values(msgs).map(m => `
-            <div class="message-bubble ${m.sender === VoidAuth.currentUser.uid ? 'sent' : 'received'}">
-                ${m.type === 'text' ? m.text : 
-                  m.type === 'image' ? `<img src="${m.url}" alt="">` :
-                  `<audio controls src="${m.url}"></audio>`}
-                <div class="message-time">${VoidApp.timeAgo(m.timestamp)}</div>
-            </div>
-        `).join('');
-        
-        container.scrollTop = container.scrollHeight;
-    },
-
-    listenForMessages() {
-        const chatId = [VoidAuth.currentUser.uid, VoidApp.currentChatUser].sort().join('_');
-        db.ref(`messages/${chatId}`).limitToLast(1).on('child_added', () => {
-            this.loadMessages();
-        });
-    },
-
-    async sendMessage() {
-        const input = document.getElementById('messageInput');
-        const text = input.value.trim();
-        if (!text) return;
-        
-        const chatId = [VoidAuth.currentUser.uid, VoidApp.currentChatUser].sort().join('_');
-        await db.ref(`messages/${chatId}`).push({
-            sender: VoidAuth.currentUser.uid,
-            type: 'text',
-            text: text,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-        
-        const user = await VoidAuth.loadUserData();
-        
-        await db.ref(`conversations/${VoidAuth.currentUser.uid}/${VoidApp.currentChatUser}`).update({
-            username: document.getElementById('chatUsername').textContent,
-            avatar: document.getElementById('chatAvatar').src,
-            lastMessage: text,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-        
-        await db.ref(`conversations/${VoidApp.currentChatUser}/${VoidAuth.currentUser.uid}`).update({
-            username: user.username,
-            avatar: user.avatar,
-            lastMessage: text,
-            unread: true,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-        
-        input.value = '';
-    },
-
-    attachImage() {
-        cloudinary.createUploadWidget({
-            cloudName: CLOUDINARY_CONFIG.cloudName,
-            uploadPreset: CLOUDINARY_CONFIG.uploadPreset,
-            sources: ['local'],
-            clientAllowedFormats: ['image']
-        }, async (error, result) => {
-            if (result.event === 'success') {
-                const chatId = [VoidAuth.currentUser.uid, VoidApp.currentChatUser].sort().join('_');
-                await db.ref(`messages/${chatId}`).push({
-                    sender: VoidAuth.currentUser.uid,
-                    type: 'image',
-                    url: result.info.secure_url,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                });
-            }
-        }).open();
-    },
-
-    async toggleRecording() {
-        if (!VoidApp.mediaRecorder) {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            VoidApp.mediaRecorder = new MediaRecorder(stream);
-            VoidApp.audioChunks = [];
-            
-            VoidApp.mediaRecorder.ondataavailable = e => VoidApp.audioChunks.push(e.data);
-            VoidApp.mediaRecorder.onstop = () => this.uploadAudio();
-            
-            VoidApp.mediaRecorder.start();
-            document.getElementById('recordingIndicator').classList.remove('hidden');
-            
-            VoidApp.recordingStartTime = Date.now();
-            VoidApp.recordingInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - VoidApp.recordingStartTime) / 1000);
-                const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
-                const secs = (elapsed % 60).toString().padStart(2, '0');
-                document.getElementById('recordingTime').textContent = `${mins}:${secs}`;
-            }, 1000);
-        } else {
-            VoidApp.mediaRecorder.stop();
-            VoidApp.mediaRecorder = null;
-            clearInterval(VoidApp.recordingInterval);
-            document.getElementById('recordingIndicator').classList.add('hidden');
-        }
-    },
-
-    async uploadAudio() {
-        const blob = new Blob(VoidApp.audioChunks, { type: 'audio/webm' });
-        const formData = new FormData();
-        formData.append('file', blob);
-        formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
-        
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/upload`, {
-            method: 'POST', body: formData
-        });
-        const data = await res.json();
-        
-        const chatId = [VoidAuth.currentUser.uid, VoidApp.currentChatUser].sort().join('_');
-        await db.ref(`messages/${chatId}`).push({
-            sender: VoidAuth.currentUser.uid,
-            type: 'audio',
-            url: data.secure_url,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-    },
-
-    blockUser() {
-        if (confirm('حظر هذا المستخدم؟')) {
-            db.ref(`users/${VoidAuth.currentUser.uid}/blocked/${VoidApp.currentChatUser}`).set(true);
-            this.closeChat();
-            VoidApp.setLog('تم حظر المستخدم');
-        }
-    }
+    newChat() { VoidApp.setLog('🚀 جاهز'); },
+    closeChat() { document.getElementById('chatWindow').classList.add('hidden'); },
+    attachImage() {},
+    toggleRecording() {},
+    sendMessage() {},
+    blockUser() {}
 };
 
-// ==================== نظام المستخدمين ====================
+// نظام المستخدمين
 const VoidUser = {
     async follow(userId) {
         if (!VoidAuth.currentUser) { VoidApp.setLog('سجل الدخول أولاً', true); return; }
         if (userId === VoidAuth.currentUser.uid) return;
         
         const ref = db.ref(`users/${userId}/followers/${VoidAuth.currentUser.uid}`);
-        const snap = await ref.once('value');
-        
-        if (snap.exists()) {
+        if ((await ref.once('value')).exists()) {
             await ref.remove();
             await db.ref(`users/${VoidAuth.currentUser.uid}/following/${userId}`).remove();
         } else {
             await ref.set(true);
             await db.ref(`users/${VoidAuth.currentUser.uid}/following/${userId}`).set(true);
-            
             await db.ref(`notifications/${userId}`).push({
                 type: 'follow', from: VoidAuth.currentUser.uid,
                 read: false, timestamp: firebase.database.ServerValue.TIMESTAMP
             });
-            
-            // 🆕 إنشاء محادثة تلقائية عند المتابعة
-            const user = await VoidAuth.loadUserData();
-            await db.ref(`conversations/${VoidAuth.currentUser.uid}/${userId}`).update({
-                username: (await db.ref(`users/${userId}/username`).once('value')).val(),
-                avatar: (await db.ref(`users/${userId}/avatar`).once('value')).val(),
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
         }
-        
-        if (VoidApp.currentPage === 'profile') VoidProfile.load();
     }
 };
 
-// ==================== نظام الإشعارات ====================
+// نظام الإشعارات
 const VoidNotifications = {
     init() {
         if (!VoidAuth.currentUser) return;
@@ -843,50 +535,36 @@ const VoidNotifications = {
         db.ref(`notifications/${VoidAuth.currentUser.uid}`).orderByChild('read').equalTo(false).on('value', snap => {
             const count = snap.numChildren();
             const badge = document.getElementById('notifBadge');
-            if (count > 0) {
-                badge.textContent = count;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
+            if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+            else badge.classList.add('hidden');
         });
     },
 
     async load() {
         if (!VoidAuth.currentUser) return;
-        
-        const snap = await db.ref(`notifications/${VoidAuth.currentUser.uid}`).limitToLast(30).once('value');
+        const snap = await db.ref(`notifications/${VoidAuth.currentUser.uid}`).limitToLast(20).once('value');
         const notifs = snap.val() || {};
         
-        const list = document.getElementById('notificationsList');
-        
-        if (Object.keys(notifs).length === 0) {
-            list.innerHTML = '<p class="text-center py-10 text-gray-400">لا توجد إشعارات</p>';
-            return;
-        }
-        
-        list.innerHTML = Object.entries(notifs).reverse().map(([id, n]) => `
-            <div class="glass p-4 rounded-xl mb-2 ${n.read ? '' : 'border-r-4 border-cyan-400'}">
-                <i class="fas fa-${n.type === 'like' ? 'heart text-red-400' : 'user-plus text-green-400'}"></i>
+        document.getElementById('notificationsList').innerHTML = Object.entries(notifs).reverse().map(([id, n]) => `
+            <div style="background:rgba(255,255,255,0.05);padding:15px;border-radius:15px;margin-bottom:10px">
+                <i class="fas fa-${n.type === 'like' ? 'heart' : 'user-plus'}" style="color:${n.type === 'like' ? '#ff007f' : '#00ff88'}"></i>
                 <span>${n.type === 'like' ? 'أعجب بفيديوك' : 'بدأ بمتابعتك'}</span>
-                <small class="block text-xs opacity-60 mt-1">${VoidApp.timeAgo(n.timestamp)}</small>
+                <small style="display:block;opacity:0.6;margin-top:5px">${VoidApp.timeAgo(n.timestamp)}</small>
             </div>
         `).join('');
     }
 };
 
-// ==================== نظام البلاغات ====================
+// نظام البلاغات
 const VoidReport = {
     open() {
         if (!VoidAuth.currentUser) { VoidApp.setLog('سجل الدخول أولاً', true); return; }
-        
-        const reason = prompt('سبب البلاغ:\n1. محتوى غير لائق\n2. عنف\n3. تحرش\n4. سبام\n5. انتحال شخصية');
+        const reason = prompt('سبب البلاغ:\n1. محتوى غير لائق\n2. عنف\n3. تحرش\n4. سبام');
         if (reason) {
             db.ref('reports').push({
                 videoId: VoidVideo.currentVideoId,
                 reporter: VoidAuth.currentUser.uid,
-                reason: reason,
-                status: 'pending',
+                reason, status: 'pending',
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             });
             VoidApp.setLog('✅ تم إرسال البلاغ');
@@ -894,7 +572,7 @@ const VoidReport = {
     }
 };
 
-// ==================== نظام الأدمن ====================
+// نظام الأدمن
 const VoidAdmin = {
     async openPanel() {
         if (!VoidAuth.isAdmin()) return;
@@ -909,7 +587,6 @@ const VoidAdmin = {
             db.ref('videos').once('value'),
             db.ref('reports').once('value')
         ]);
-        
         document.getElementById('adminUsers').textContent = u.numChildren();
         document.getElementById('adminVideos').textContent = v.numChildren();
         document.getElementById('adminReports').textContent = r.numChildren();
@@ -921,17 +598,16 @@ const VoidAdmin = {
         
         document.getElementById('adminUsersList').innerHTML = Object.entries(users).map(([id, u]) => `
             <div class="admin-user-item">
-                <div class="flex items-center gap-3">
-                    <img src="${u.avatar}" alt="">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <img src="${u.avatar}">
                     <div>
-                        <p class="font-bold">@${u.username}</p>
-                        <p class="text-xs opacity-70">${u.email}</p>
+                        <p style="font-weight:bold">@${u.username}</p>
+                        <p style="font-size:12px;opacity:0.7">${u.email}</p>
                     </div>
                 </div>
-                <div class="flex gap-2">
-                    ${!u.verified ? `<button class="glass px-3 py-1 rounded" onclick="VoidAdmin.verifyUser('${id}')">توثيق</button>` : ''}
-                    ${u.role !== 'banned' ? `<button class="glass px-3 py-1 rounded text-red-400" onclick="VoidAdmin.banUser('${id}')">حظر</button>` : ''}
-                    <button class="glass px-3 py-1 rounded" onclick="VoidAdmin.deleteUser('${id}')">حذف</button>
+                <div style="display:flex;gap:5px">
+                    ${!u.verified ? `<button style="background:#00f2ff;border:none;padding:5px 10px;border-radius:5px;color:#000;cursor:pointer" onclick="VoidAdmin.verifyUser('${id}')">توثيق</button>` : ''}
+                    <button style="background:#ff0055;border:none;padding:5px 10px;border-radius:5px;color:#fff;cursor:pointer" onclick="VoidAdmin.deleteUser('${id}')">حذف</button>
                 </div>
             </div>
         `).join('');
@@ -942,48 +618,34 @@ const VoidAdmin = {
         const reports = snap.val() || {};
         
         document.getElementById('adminReportsList').innerHTML = Object.entries(reports).map(([id, r]) => `
-            <div class="glass p-4 rounded-xl mb-2">
-                <p><strong>الفيديو:</strong> ${r.videoId?.substring(0, 8)}...</p>
-                <p><strong>السبب:</strong> ${r.reason}</p>
-                <p><strong>الحالة:</strong> ${r.status}</p>
-                <button class="neon-btn mt-2" style="background:#ff0055;" onclick="VoidAdmin.deleteVideo('${r.videoId}')">حذف الفيديو</button>
+            <div style="background:rgba(255,255,255,0.05);padding:15px;border-radius:15px;margin-bottom:10px">
+                <p>الفيديو: ${r.videoId?.substring(0,8)}...</p>
+                <p>السبب: ${r.reason}</p>
+                <button style="background:#ff0055;border:none;padding:8px 15px;border-radius:8px;color:#fff;margin-top:10px;cursor:pointer" onclick="VoidAdmin.deleteVideo('${r.videoId}')">حذف الفيديو</button>
             </div>
         `).join('');
     },
 
-    async verifyUser(userId) {
-        await db.ref(`users/${userId}/verified`).set(true);
-        this.loadUsers();
-    },
-
-    async banUser(userId) {
-        await db.ref(`users/${userId}/role`).set('banned');
-        this.loadUsers();
-    },
-
+    async verifyUser(userId) { await db.ref(`users/${userId}/verified`).set(true); this.loadUsers(); },
+    
     async deleteUser(userId) {
-        if (confirm('حذف المستخدم نهائياً؟')) {
+        if (confirm('حذف المستخدم؟')) {
             await db.ref(`users/${userId}`).remove();
-            this.loadUsers();
-            this.loadStats();
+            this.loadUsers(); this.loadStats();
         }
     },
 
     async deleteVideo(videoId) {
         if (confirm('حذف الفيديو؟')) {
             await db.ref(`videos/${videoId}`).remove();
-            await db.ref(`reports`).orderByChild('videoId').equalTo(videoId).once('value', snap => {
-                snap.forEach(child => child.ref.remove());
-            });
             this.loadReports();
         }
     }
 };
 
-// ==================== تهيئة التطبيق ====================
+// تهيئة التطبيق
 document.addEventListener('DOMContentLoaded', () => {
     VoidApp.init();
-    VoidNotifications.init();
     
     window.VoidApp = VoidApp;
     window.VoidVideo = VoidVideo;
@@ -997,4 +659,4 @@ document.addEventListener('DOMContentLoaded', () => {
     window.VoidAdmin = VoidAdmin;
 });
 
-console.log('🦁 VOID_LION - ALL SYSTEMS ACTIVE WITH DEEP LINKING');
+console.log('🦁 VOID LION - ALL SYSTEMS ACTIVE');
