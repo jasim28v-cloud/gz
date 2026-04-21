@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOID LION | لوحة التحكم</title>
+    <base href="./">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; background: #0a0f1e; color: #fff; padding: 20px; }
+        .admin-container { max-width: 800px; margin: 0 auto; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .admin-header h1 { color: #ffd700; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #00f2ff; }
+        .stat-card .value { font-size: 28px; font-weight: bold; color: #00f2ff; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; background: rgba(255,255,255,0.05); border: none; border-radius: 10px; color: #fff; cursor: pointer; }
+        .tab.active { background: #00f2ff; color: #000; }
+        .user-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin-bottom: 10px; }
+        .user-item img { width: 45px; height: 45px; border-radius: 50%; }
+        .actions { display: flex; gap: 8px; }
+        .btn { padding: 6px 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; }
+        .btn-verify { background: #00f2ff; color: #000; }
+        .btn-ban { background: #ffcc00; color: #000; }
+        .btn-delete { background: #ff0055; color: #fff; }
+        .btn-unban { background: #00ff88; color: #000; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h1><i class="fas fa-crown"></i> لوحة تحكم VOID LION</h1>
+        <button onclick="location.href='index.html'" style="background:#00f2ff;border:none;padding:10px 20px;border-radius:10px;cursor:pointer"><i class="fas fa-arrow-right"></i> العودة</button>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card"><span class="value" id="totalUsers">0</span><p>مستخدم</p></div>
+        <div class="stat-card"><span class="value" id="totalVideos">0</span><p>فيديو</p></div>
+        <div class="stat-card"><span class="value" id="totalReports">0</span><p>بلاغ</p></div>
+        <div class="stat-card"><span class="value" id="totalBanned">0</span><p>محظور</p></div>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab active" data-tab="users">المستخدمين</button>
+        <button class="tab" data-tab="reports">البلاغات</button>
+        <button class="tab" data-tab="videos">الفيديوهات</button>
+    </div>
+    
+    <div id="usersSection">
+        <div style="margin-bottom:15px">
+            <input type="text" id="searchUser" placeholder="بحث عن مستخدم..." style="width:100%;padding:12px;background:rgba(255,255,255,0.1);border:1px solid #00f2ff;border-radius:10px;color:#fff">
+        </div>
+        <div id="usersList"></div>
+    </div>
+    
+    <div id="reportsSection" class="hidden">
+        <div id="reportsList"></div>
+    </div>
+    
+    <div id="videosSection" class="hidden">
+        <div id="videosList"></div>
+    </div>
+</div>
+
+<script src="./js/firebase.js"></script>
+<script>
+const ADMIN_EMAIL = 'jasim28v@gmail.com';
+
+auth.onAuthStateChanged(async user => {
+    if (!user || user.email !== ADMIN_EMAIL) {
+        location.href = 'index.html';
+        return;
+    }
+    loadStats();
+    loadUsers();
+});
+
+async function loadStats() {
+    const users = (await db.ref('users').once('value')).numChildren();
+    const videos = (await db.ref('videos').once('value')).numChildren();
+    const reports = (await db.ref('reports').once('value')).numChildren();
+    const bannedSnap = await db.ref('users').orderByChild('role').equalTo('banned').once('value');
+    
+    document.getElementById('totalUsers').textContent = users;
+    document.getElementById('totalVideos').textContent = videos;
+    document.getElementById('totalReports').textContent = reports;
+    document.getElementById('totalBanned').textContent = bannedSnap.numChildren();
+}
+
+async function loadUsers() {
+    const snap = await db.ref('users').once('value');
+    const users = snap.val() || {};
+    
+    document.getElementById('usersList').innerHTML = Object.entries(users).map(([id, u]) => `
+        <div class="user-item">
+            <div style="display:flex;align-items:center;gap:12px">
+                <img src="${u.avatar}" alt="">
+                <div>
+                    <strong>@${u.username}</strong>
+                    <div style="font-size:12px;opacity:0.7">${u.email}</div>
+                    <div style="font-size:11px">
+                        ${u.verified ? '✅ موثق' : ''} 
+                        ${u.role === 'banned' ? '🚫 محظور' : ''}
+                        ${u.role === 'admin' ? '👑 أدمن' : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="actions">
+                ${!u.verified ? `<button class="btn btn-verify" onclick="verifyUser('${id}')">توثيق</button>` : ''}
+                ${u.role !== 'banned' ? `<button class="btn btn-ban" onclick="banUser('${id}')">حظر</button>` : `<button class="btn btn-unban" onclick="unbanUser('${id}')">فك الحظر</button>`}
+                ${u.role !== 'admin' ? `<button class="btn btn-delete" onclick="deleteUser('${id}')">حذف</button>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+async function verifyUser(uid) {
+    await db.ref(`users/${uid}/verified`).set(true);
+    loadUsers();
+}
+
+async function banUser(uid) {
+    await db.ref(`users/${uid}/role`).set('banned');
+    loadUsers(); loadStats();
+}
+
+async function unbanUser(uid) {
+    await db.ref(`users/${uid}/role`).set('user');
+    loadUsers(); loadStats();
+}
+
+async function deleteUser(uid) {
+    if (confirm('حذف المستخدم نهائياً؟')) {
+        await db.ref(`users/${uid}`).remove();
+        const videos = await db.ref('videos').once('value');
+        videos.forEach(v => { if (v.val().userId === uid) v.ref.remove(); });
+        loadUsers(); loadStats();
+    }
+}
+
+// التبويبات
+document.querySelectorAll('.tab').forEach(t => {
+    t.onclick = () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        document.getElementById('usersSection').classList.toggle('hidden', t.dataset.tab !== 'users');
+        document.getElementById('reportsSection').classList.toggle('hidden', t.dataset.tab !== 'reports');
+        document.getElementById('videosSection').classList.toggle('hidden', t.dataset.tab !== 'videos');
+        if (t.dataset.tab === 'reports') loadReports();
+        if (t.dataset.tab === 'videos') loadVideos();
+    };
+});
+
+async function loadReports() {
+    const snap = await db.ref('reports').once('value');
+    const reports = snap.val() || {};
+    document.getElementById('reportsList').innerHTML = Object.entries(reports).map(([id, r]) => `
+        <div style="background:rgba(255,255,255,0.05);padding:15px;border-radius:15px;margin-bottom:10px">
+            <p><strong>الفيديو:</strong> ${r.videoId}</p>
+            <p><strong>المبلغ:</strong> ${r.reporter}</p>
+            <p><strong>السبب:</strong> ${r.reason}</p>
+            <button class="btn btn-delete" onclick="deleteVideo('${r.videoId}')">حذف الفيديو</button>
+        </div>
+    `).join('');
+}
+
+async function loadVideos() {
+    const snap = await db.ref('videos').limitToLast(20).once('value');
+    const videos = snap.val() || {};
+    document.getElementById('videosList').innerHTML = Object.entries(videos).reverse().map(([id, v]) => `
+        <div style="background:rgba(255,255,255,0.05);padding:15px;border-radius:15px;margin-bottom:10px">
+            <p><strong>@${v.username}</strong> - ${v.title || 'بدون عنوان'}</p>
+            <button class="btn btn-delete" onclick="deleteVideo('${id}')">حذف</button>
+        </div>
+    `).join('');
+}
+
+async function deleteVideo(vid) {
+    if (confirm('حذف الفيديو؟')) {
+        await db.ref(`videos/${vid}`).remove();
+        loadVideos(); loadStats();
+    }
+}
+</script>
+</body>
+</html>
