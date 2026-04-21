@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOID LION | الدخول</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+</head>
+<body class="bg-black text-white">
+    <div class="auth-container">
+        <div class="auth-card glass">
+            <div class="auth-logo">
+                <i class="fas fa-lion"></i>
+                <h1>VOID LION</h1>
+                <p>بوابة الفراغ الرقمي</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="login">دخول</button>
+                <button class="tab-btn" data-tab="register">حساب جديد</button>
+            </div>
+
+            <form id="loginForm" class="auth-form">
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
+                </div>
+                <button type="submit" class="neon-btn">دخول <i class="fas fa-arrow-left"></i></button>
+            </form>
+
+            <form id="registerForm" class="auth-form hidden">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="regUsername" placeholder="اسم المستخدم" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="regEmail" placeholder="البريد الإلكتروني" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="regPassword" placeholder="كلمة المرور" required>
+                </div>
+                <button type="submit" class="neon-btn">إنشاء حساب <i class="fas fa-user-plus"></i></button>
+            </form>
+
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <script src="js/firebase.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        const loginTab = document.querySelector('[data-tab="login"]');
+        const registerTab = document.querySelector('[data-tab="register"]');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const messageEl = document.getElementById('message');
+
+        loginTab.addEventListener('click', () => {
+            loginTab.classList.add('active');
+            registerTab.classList.remove('active');
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        });
+
+        registerTab.addEventListener('click', () => {
+            registerTab.classList.add('active');
+            loginTab.classList.remove('active');
+            registerForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            messageEl.textContent = 'جاري الدخول...';
+            messageEl.className = 'message info';
+            
+            const result = await VoidAuth.login(email, password);
+            if (result.success) {
+                messageEl.textContent = 'تم الدخول بنجاح!';
+                messageEl.className = 'message success';
+                setTimeout(() => window.location.href = 'index.html', 500);
+            } else {
+                messageEl.textContent = result.error;
+                messageEl.className = 'message error';
+            }
+        });
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            if (username.length < 3) {
+                messageEl.textContent = 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل';
+                messageEl.className = 'message error';
+                return;
+            }
+
+            messageEl.textContent = 'جاري إنشاء الحساب...';
+            messageEl.className = 'message info';
+
+            const result = await VoidAuth.register(username, email, password);
+            if (result.success) {
+                messageEl.textContent = 'تم إنشاء الحساب بنجاح!';
+                messageEl.className = 'message success';
+                setTimeout(() => window.location.href = 'index.html', 500);
+            } else {
+                messageEl.textContent = result.error;
+                messageEl.className = 'message error';
+            }
+        });
+    </script>
+</body>
+</html>
