@@ -1,0 +1,46 @@
+{
+  "name": "VOID LION - منصة الأسد",
+  "short_name": "VOID LION",
+  "description": "منصة تواصل اجتماعي بطابع الفراغ الرقمي - فيديوهات، محادثات، واكتشاف",
+  "theme_color": "#00f2ff",
+  "background_color": "#000000",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/index.html",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/72x72/00f2ff/000000?text=VL",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/192x192/00f2ff/000000?text=VL",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/00f2ff/000000?text=VOID",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["social", "entertainment", "video"],
+  "shortcuts": [
+    {
+      "name": "استكشاف",
+      "short_name": "استكشف",
+      "description": "اكتشف فيديوهات جديدة",
+      "url": "/index.html?page=explore",
+      "icons": [{ "src": "https://via.placeholder.com/96x96/00f2ff/000000?text=E", "sizes": "96x96" }]
+    },
+    {
+      "name": "الرسائل",
+      "short_name": "رسائل",
+      "description": "محادثاتك الخاصة",
+      "url": "/index.html?page=messages",
+      "icons": [{ "src": "https://via.placeholder.com/96x96/00f2ff/000000?text=M", "sizes": "96x96" }]
+    }
+  ]
+}
